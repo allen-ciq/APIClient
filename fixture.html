@@ -1,0 +1,18 @@
+<!DOCTYPE HTML>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<title>Mocha Test Fixture</title>
+		<link rel="stylesheet" href="node_modules/mocha/mocha.css">
+		<script src="node_modules/mocha/mocha.js"></script>
+		<script src="node_modules/chai/chai.js"></script>
+	</head>
+	<body>
+		<div id="mocha"></div>
+		<script type="module">
+			import PuppeteerReporter from './puppeteer-reporter.js';
+			mocha.setup({ ui: 'bdd', reporter: PuppeteerReporter });
+		</script>
+		<script type="module" src="specs.js" onload="mocha.run()"></script>
+	</body>
+</html>

@@ -1,15 +1,14 @@
-'use strict';
-
-module.exports = {
+// module.exports = Object.freeze({
+export const registry = Object.freeze({
 	getEndpoint: {
-		path: '/path/elem?{{param}}',
+		url: 'http://localhost:3000/path/elem?{{param}}',
 		method: 'get',
 		headers: {
-			Cookie: 'JSESSIONID={{token}}'
+			cookie: 'JSESSIONID={{token}}'
 		}
 	},
 	postEndpoint: {
-		path: 'path/elem',
+		url: 'http://localhost:3000/path/elem',
 		method: 'post',
 		headers: {
 			'Content-Type': 'application/json'
@@ -20,7 +19,25 @@ module.exports = {
 		}
 	},
 	deleteEndpoint: {
-		path: '/path/elem',
+		url: 'http://localhost:3000/path/elem',
 		method: '_delete'
+	},
+	test: {
+		url: 'http://localhost:3000/{{param}}',
+		method: 'custom',
+		customMethod: 'get',
+		headers: {
+			accept: 'application/json'
+		}
+	},
+	fetchTest: {
+		url: 'http://localhost:3000/{{param}}',
+		method: 'fetch',
+		fetchMethod: 'post',
+		headers: {
+			'content-type': 'application/json'
+		},
+		rate: 5,
+		period: 'minute'
 	}
-};
+});

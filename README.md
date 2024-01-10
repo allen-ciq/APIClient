@@ -1,14 +1,12 @@
-# RestClient
-A client object that is bound to a set of endpoints.
+# APIClient
+An API client object that is bound to a set of endpoints.
 
 ## Example
 ```
-var registry = require('./registry');
-var RestClient = require('./RestClient');
-var client = new RestClient('host.name', registry);
+const client = require('./RestClient')(require('./registry'));
 
-// edit the registry so your client will have better names
-client.getEndpoint({token: someToken}, function(response){
+// the client methods come from the registry keys
+client.someEndpoint({token: someToken}, function(response){
 	handler(reponse);
 });
 ```
