@@ -3,10 +3,12 @@ An API client object that is bound to a set of endpoints.
 
 ## Example
 ```
-const client = require('./RestClient')(require('./registry'));
+const client = require('./APIClient')(require('./registry'));
 
 // the client methods come from the registry keys
-client.someEndpoint({token: someToken}, function(response){
-	handler(reponse);
-});
+try{
+	const response = await client.someEndpoint({token: someToken});
+}catch(e){
+	throw new Error(e);
+}
 ```

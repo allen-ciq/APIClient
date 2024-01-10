@@ -1,14 +1,10 @@
-// module.exports = Object.freeze({
 export const registry = Object.freeze({
 	getEndpoint: {
-		url: 'http://localhost:3000/path/elem?{{param}}',
+		url: 'http://localhost:3000/path/elem?{{search}}',
 		method: 'get',
-		headers: {
-			cookie: 'JSESSIONID={{token}}'
-		}
 	},
 	postEndpoint: {
-		url: 'http://localhost:3000/path/elem',
+		url: 'http://localhost:3000/login',
 		method: 'post',
 		headers: {
 			'Content-Type': 'application/json'
@@ -19,25 +15,48 @@ export const registry = Object.freeze({
 		}
 	},
 	deleteEndpoint: {
-		url: 'http://localhost:3000/path/elem',
-		method: '_delete'
-	},
-	test: {
-		url: 'http://localhost:3000/{{param}}',
-		method: 'custom',
-		customMethod: 'get',
+		url: 'http://localhost:3000/path/elem?{{search}}',
+		method: '_delete',
 		headers: {
-			accept: 'application/json'
+			not_a_cookie: 'SESSIONID={{token}}'
 		}
 	},
 	fetchTest: {
-		url: 'http://localhost:3000/{{param}}',
+		url: 'http://localhost:3000/{{type}}/resource',
 		method: 'fetch',
-		fetchMethod: 'post',
+		fetchMethod: 'POST',
 		headers: {
 			'content-type': 'application/json'
 		},
-		rate: 5,
+		body: '{{payload}}'
+	},
+	customTest: {
+		url: 'http://localhost:3000/metrics',
+		method: 'custom',
+		customMethod: 'post',
+		headers: {
+			accept: 'application/json',
+			'content-type': 'application/json'
+		},
+		body: {
+			slot: '{{slot}}',
+			uuid: '{{uuid}}'
+		}
+	},
+	timeoutTest: {
+		url: 'http://localhost:3000/timeout',
+		method: 'custom',
+		customMethod: 'post',
+		headers: {
+			'x-delay': '{{delay}}'
+		},
+		timeout: 2000
+	},
+	throttleTest: {
+		url: 'http://localhost:3000/',
+		method: 'fetch',
+		fetchMethod: 'post',
+		rate: 1,
 		period: 'minute'
 	}
 });

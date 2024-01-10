@@ -2,22 +2,25 @@
   "name": "apiclient",
   "version": "1.0.0",
   "description": "A client object that is bound to a set of endpoints",
-  "main": "APIClient.js",
-  "dependencies": {
-    "body-parser": "^1.20.2",
-    "chai": "^4.3.10",
-    "eslint": "^8.52.0",
-    "express": "^4.18.2",
-    "mocha": "^10.2.0",
-    "puppeteer": "^21.4.1"
-  },
+  "main": "index.js",
   "scripts": {
-    "test": "mocha"
+    "karma": "karma start",
+    "test": "mocha",
+    "testServer": "node testServer.js"
   },
-  "repository": {
-    "type": "git",
-    "url": "personal-github:stupid-genius/RestClient.git"
-  },
-  "author": "accounts@stupid-genius.com",
-  "license": "GPL-3.0"
+  "author": "Stupid Genius Software",
+  "license": "GPL-3.0",
+  "devDependencies": {
+    "chai": "4.3.10",
+    "cors": "^2.8.5",
+    "esbuild": "^0.19.11",
+    "express": "^4.18.2",
+    "karma": "^6.4.2",
+    "karma-chrome-launcher": "^3.2.0",
+    "karma-esbuild": "^2.3.0",
+    "karma-firefox-launcher": "^2.1.2",
+    "karma-mocha": "^2.0.1",
+    "karma-mocha-reporter": "^2.2.5",
+    "mocha": "^10.2.0"
+  }
 }
