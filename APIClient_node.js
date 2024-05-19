@@ -1,3 +1,6 @@
+const http = require('http');
+const https = require('https');
+
 /*
  *	Governor rate limits calls to a given key
  *
@@ -31,8 +34,6 @@ function Governor(key, rate, period = "second"){
 		get: function cache(){
 			const now = Date.now();
 			const elapsed = now - (cache.last || 0);
-			// console.log(`now: ${now} last: ${cache.last} elapsed: ${elapsed}`)
-			// console.log(`Elapsed: ${elapsed} Throttle: ${throttleInterval}`);
 
 			const open = elapsed >= throttleInterval;
 			if(open){
@@ -57,6 +58,19 @@ function APIClientFactory(registry){
 		return APIClientFactory.instance;
 	}
 
+	function getClient(protocol){
+		let client;
+		switch(protocol){
+			case 'http:':
+				client = http;
+				break;
+			case 'https:':
+			default:
+				client = https;
+		}
+		return client;
+	}
+
 	const interpolate = function interpolator(template = "", model){
 		if(template instanceof Object){
 			const interpolated = template instanceof Array ? [] : {};
@@ -77,79 +91,48 @@ function APIClientFactory(registry){
 		});
 	};
 
+	function httpHandler(entry, config){
+		const options = {
+			...entry,
+			...config,
+			host: interpolate(entry.host, config),
+			path: interpolate(entry.path, config),
+			headers: interpolate(entry.headers, config)
+		};
+		const client = getClient(entry.protocol);
+		return client.request(options, (res) => {
+			let response = '';
+			res.on('data', (chunk) => {response += chunk})
+				.on('end', () => {config.success(response)})
+				.on('error', config.failure)
+				.on('timeout', config.failure);
+		});
+	}
+
 	const client = {
 		get: function(entry, config){
-			const req = new XMLHttpRequest();
-			const timeout = config.timeout || entry.timeout || 0;
-			req.open(entry.method, interpolate(entry.url, config));
-			Object.entries(entry.headers || {}).forEach(([header, value]) => {
-				req.setRequestHeader(header, interpolate(value, config));
-			});
-			req.onload = function(){
-				config.success(req.response);
-			};
-			req.onerror = function(e){
-				config.failure(e);
-			};
-			if(timeout > 0){
-				req.timeout = timeout;
-				req.ontimeout = function(e){
-					// console.log('timeout: ', timeout);
-					config.failure(e);
-				};
-			}
-			req.send();
+			const req = httpHandler(entry, config);
+			req.end();
 		},
 		post: function(entry, config){
-			const req = new XMLHttpRequest();
-			const timeout = config.timeout || entry.timeout || 0;
-			req.open(entry.method, interpolate(entry.url, config));
-			Object.entries(entry.headers || {}).forEach(([header, value]) => {
-				req.setRequestHeader(header, interpolate(value, config));
-			});
-			req.onload = function(){
-				config.success(req.response);
-			};
-			req.onerror = function(e){
-				config.failure(e);
-			};
-			if(timeout > 0){
-				req.timeout = timeout;
-				req.ontimeout = function(e){
-					// console.log('timeout: ', timeout);
-					config.failure(e);
-				};
-			}
-			let payload;
-			if(typeof entry.body === "object"){
-				payload = JSON.stringify(interpolate(config, entry.body));
-			}else{
-				payload = entry.body;
-			}
-			req.send(payload);
+			const req = httpHandler(entry, config);
+			req.write(JSON.stringify(interpolate(entry.body, config)));
+			req.end();
 		},
-		put: function(entry){
-			console.log("put called for: " + entry.url);
+		put: function(entry, config){
+			const req = httpHandler(entry, config);
+			req.end();
 		},
-		_delete: function(entry, config){
-			const req = new XMLHttpRequest();
-			req.open('delete', interpolate(entry.url, config));
-			Object.entries(entry.headers || {}).forEach(([header, value]) => {
-				req.setRequestHeader(header, interpolate(value, config));
-			});
-			req.onload = function(){
-				config.success(req.response);
-			};
-			req.onerror = function(e){
-				config.failure(e);
-			};
-			req.send();
+		delete: function(entry, config){
+			const req = httpHandler(entry, config);
+			req.end();
 		},
 		fetch: async function(entry, config){
 			try{
+				// const response = await fetch(interpolate(`${entry.protocol}//${entry.host}:${entry.port ? entry.port : 80}${entry.path}`, config), {
 				const response = await fetch(interpolate(entry.url, config), {
 					method: entry.fetchMethod,
-					headers: Object.entries(entry.headers || {}).reduce((acc, [k, v]) => {
+					headers: Object.entries(entry.headers).reduce((acc, [k, v]) => {
 						acc[k] = v;
 						return acc;
 					}, {}),
@@ -157,31 +140,8 @@ function APIClientFactory(registry){
 				});
 				config.success(response);
 			}catch(e){
-				// console.error(e);
 				config.failure(e);
 			}
-		},
-		custom: function(entry, config){
-			const timeout = config.timeout || entry.timeout || 0;
-			const req = new XMLHttpRequest();
-			req.open(entry.customMethod, interpolate(entry.url, config), timeout > 0);
-			Object.entries(entry.headers || {}).forEach(([header, value]) => {
-				req.setRequestHeader(header, interpolate(value, config));
-			});
-			req.onload = function(){
-				config.success(req.response);
-			};
-			req.onerror = function(e){
-				config.failure(e);
-			};
-			if(timeout > 0){
-				req.timeout = timeout;
-				req.ontimeout = function(e){
-					// console.log('timeout: ', timeout);
-					config.failure(e);
-				};
-			}
-			req.send(JSON.stringify(interpolate(entry.body, config)));
 		}
 	};
 
@@ -220,6 +180,6 @@ function APIClientFactory(registry){
 	Object.defineProperty(APIClientFactory, "instance", {
 		value: this
 	});
-}
+};
 
-export const APIClient = APIClientFactory;
+module.exports = APIClientFactory;

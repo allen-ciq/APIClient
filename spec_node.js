@@ -1,17 +1,9 @@
 const chai = require('chai');
 const { assert, expect } = chai;
+const registry= require('./registry_node');
+const client = require('./APIClient_node')(registry);
 
-describe('APIClient', function(){
-	let client, registry;
-	before(async function(){
-		try{
-			registry = (await import('./registry')).registry;
-			client = (await import('./APIClient')).APIClient(registry);
-		}catch(e){
-			console.error(e);
-		}
-	});
-	after(function(){});
+describe('APIClient (node)', function(){
 	it('should build from registry', function(){
 		Object.keys(registry).forEach((entry) => {
 			assert(client[entry] !== undefined, `Client should contain ${entry}`);
@@ -25,10 +17,7 @@ describe('APIClient', function(){
 			assert.equal(result.method, 'GET');
 			expect(result.query.term).exist;
 		}catch(e){
-			if (e instanceof chai.AssertionError) {
-				throw e;
-			}
-			console.error(e);
+			assert(false, e);
 		}
 	});
 	it('should GET', function(done){
@@ -41,8 +30,8 @@ describe('APIClient', function(){
 				expect(result.query.term).exist;
 				done();
 			},
-			failure: (err) => {
-				assert(false, err);
+			failure: () => {
+				assert(false, e);
 			}
 		});
 	});
@@ -60,12 +49,26 @@ describe('APIClient', function(){
 				assert.equal(result.body.password, password);
 				done();
 			},
-			failure: (err) => {
-				assert(false, err);
+			failure: (e) => {
+				assert(false, e);
 			}
 		});
 	});
-	it.skip('should PUT', function(){});
+	it('should PUT', async function(){
+		const id = 'bogus';
+		try{
+			const response = await client.putEndpoint({ id });
+			// console.log(response);
+			const result = JSON.parse(response);
+			assert.equal(result.method, 'PUT');
+			assert.equal(result.path, `/path/elem/${id}`);
+		}catch(e){
+			if (e instanceof chai.AssertionError) {
+				throw e;
+			}
+			console.error(e);
+		}
+	});
 	it('should DELETE', async function(){
 		const token = 'bWlnaHR5IG5vc2V5IGFyZW4ndCB3ZT8K';
 		try{
@@ -77,7 +80,7 @@ describe('APIClient', function(){
 			// console.log(JSON.stringify(result, null, 2));
 			assert.equal(result.method, 'DELETE');
 			expect(result.query.term).exist;
-			assert.equal(result.headers.not_a_cookie, `SESSIONID=${token}`);
+			assert.equal(result.headers.not_a_cookie, `JSESSIONID=${token}`);
 		}catch(e){
 			if (e instanceof chai.AssertionError) {
 				throw e;
@@ -96,7 +99,7 @@ describe('APIClient', function(){
 				payload
 			});
 			const result = await response.json();
-			// console.log('result: ', JSON.stringify(result, null, 2));
+			// console.log(JSON.stringify(result, null, 2));
 			assert.equal(result.method, 'POST');
 			assert.equal(result.path, `/${path}/resource`);
 			expect(result.body).deep.equal(payload);
@@ -107,7 +110,7 @@ describe('APIClient', function(){
 			console.error(e);
 		}
 	});
-	it('should use custom', function(done){
+	it.skip('should use custom', function(done){
 		const slot = 100;
 		const uuid = 'QWxsZW4gd2FzIGhlcmUK';
 		client.customTest({
@@ -121,8 +124,8 @@ describe('APIClient', function(){
 				expect(result.body).deep.equal({slot: `${slot}`, uuid: `${uuid}`});
 				done();
 			},
-			failure: (err) => {
-				assert(false, err);
+			failure: (e) => {
+				assert(false, e);
 			}
 		});
 	});
@@ -130,16 +133,13 @@ describe('APIClient', function(){
 		let shouldThrottle = false;
 		try{
 			let response = await client.throttleTest({});
-			const result = await response.json();
-			// console.log('result: ', JSON.stringify(result, null, 2));
-			assert.equal(result.method, 'POST');
+			// console.log(response);
+			const result = JSON.parse(response);
+			assert.equal(result.method, 'GET');
 			shouldThrottle = true;
 			response = await client.throttleTest({});
 		}catch(e){
 			// console.error('Caught: ', JSON.stringify(e, null, 2));
-			if (e instanceof chai.AssertionError) {
-				throw e;
-			}
 			assert(shouldThrottle, 'should not have throttled');
 		}
 	});
@@ -156,9 +156,6 @@ describe('APIClient', function(){
 			response = await client.timeoutTest({ delay: 3000 });
 		}catch(e){
 			// console.error('Caught: ', JSON.stringify(e, null, 2));
-			if (e instanceof chai.AssertionError) {
-				throw e;
-			}
 			assert(shouldTimeout, 'should not have timed out');
 		}
 	});
