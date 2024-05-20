@@ -17,7 +17,10 @@ describe('APIClient (node)', function(){
 			assert.equal(result.method, 'GET');
 			expect(result.query.term).exist;
 		}catch(e){
-			assert(false, e);
+			if(e instanceof chai.AssertionError){
+				throw e;
+			}
+			console.error(e);
 		}
 	});
 	it('should GET', function(done){
@@ -57,9 +60,12 @@ describe('APIClient (node)', function(){
 	it('should PUT', async function(){
 		const id = 'bogus';
 		try{
-			const response = await client.putEndpoint({ id });
-			// console.log(response);
+			const response = await client.putEndpoint({
+				id,
+				payload: 'test=thing'
+			});
 			const result = JSON.parse(response);
+			// console.log(JSON.stringify(result, null, 2));
 			assert.equal(result.method, 'PUT');
 			assert.equal(result.path, `/path/elem/${id}`);
 		}catch(e){
@@ -110,7 +116,7 @@ describe('APIClient (node)', function(){
 			console.error(e);
 		}
 	});
-	it.skip('should use custom', function(done){
+	it('should use custom', function(done){
 		const slot = 100;
 		const uuid = 'QWxsZW4gd2FzIGhlcmUK';
 		client.customTest({
@@ -140,6 +146,9 @@ describe('APIClient (node)', function(){
 			response = await client.throttleTest({});
 		}catch(e){
 			// console.error('Caught: ', JSON.stringify(e, null, 2));
+			if(e instanceof chai.AssertionError){
+				throw e;
+			}
 			assert(shouldThrottle, 'should not have throttled');
 		}
 	});
@@ -156,6 +165,9 @@ describe('APIClient (node)', function(){
 			response = await client.timeoutTest({ delay: 3000 });
 		}catch(e){
 			// console.error('Caught: ', JSON.stringify(e, null, 2));
+			if(e instanceof chai.AssertionError){
+				throw e;
+			}
 			assert(shouldTimeout, 'should not have timed out');
 		}
 	});

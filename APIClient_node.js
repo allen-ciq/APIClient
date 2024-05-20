@@ -109,6 +109,17 @@ function APIClientFactory(registry){
 		});
 	}
 
+	// TODO: use content header to process
+	function processPayload(template, config){
+		let payload;
+		if(typeof template === "object"){
+			payload = JSON.stringify(interpolate(template, config));
+		}else{
+			payload = interpolate(template, config);
+		}
+		return payload;
+	}
+
 	const client = {
 		get: function(entry, config){
 			const req = httpHandler(entry, config);
@@ -116,11 +127,12 @@ function APIClientFactory(registry){
 		},
 		post: function(entry, config){
 			const req = httpHandler(entry, config);
-			req.write(JSON.stringify(interpolate(entry.body, config)));
+			req.write(processPayload(entry.body, config));
 			req.end();
 		},
 		put: function(entry, config){
 			const req = httpHandler(entry, config);
+			req.write(processPayload(entry.body, config));
 			req.end();
 		},
 		delete: function(entry, config){
@@ -129,8 +141,9 @@ function APIClientFactory(registry){
 		},
 		fetch: async function(entry, config){
 			try{
-				// const response = await fetch(interpolate(`${entry.protocol}//${entry.host}:${entry.port ? entry.port : 80}${entry.path}`, config), {
-				const response = await fetch(interpolate(entry.url, config), {
+				const url = `${entry.protocol}//${entry.host}:${entry.port || '80'}${entry.path}`;
+				// console.log(url);
+				const response = await fetch(interpolate(url, config), {
 					method: entry.fetchMethod,
 					headers: Object.entries(entry.headers).reduce((acc, [k, v]) => {
 						acc[k] = v;
@@ -142,6 +155,26 @@ function APIClientFactory(registry){
 			}catch(e){
 				config.failure(e);
 			}
+		},
+		custom: function(entry, config){
+			const options = {
+				...entry,
+				...config,
+				method: entry.customMethod,
+				host: interpolate(entry.host, config),
+				path: interpolate(entry.path, config),
+				headers: interpolate(entry.headers, config)
+			};
+			const client = getClient(entry.protocol);
+			const req = client.request(options, (res) => {
+				let response = '';
+				res.on('data', (chunk) => {response += chunk})
+					.on('end', () => {config.success(response)})
+					.on('error', config.failure)
+					.on('timeout', config.failure);
+			});
+			req.write(processPayload(entry.body, config));
+			req.end();
 		}
 	};
 

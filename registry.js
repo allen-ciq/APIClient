@@ -14,9 +14,17 @@ export const registry = Object.freeze({
 			'password': '{{password}}'
 		}
 	},
+	putEndpoint: {
+		url: 'http://localhost:3000/path/elem/{{id}}',
+		method: 'put',
+		headers: {
+			'Content-Type': 'application/x-www-form-urlencoded'
+		},
+		body: '{{payload}}'
+	},
 	deleteEndpoint: {
 		url: 'http://localhost:3000/path/elem?{{search}}',
-		method: '_delete',
+		method: 'delete',
 		headers: {
 			not_a_cookie: 'SESSIONID={{token}}'
 		}

@@ -77,6 +77,17 @@ function APIClientFactory(registry){
 		});
 	};
 
+	// TODO: use content header to process
+	function processPayload(template, config){
+		let payload;
+		if(typeof template === "object"){
+			payload = JSON.stringify(interpolate(template, config));
+		}else{
+			payload = interpolate(template, config);
+		}
+		return payload;
+	}
+
 	const client = {
 		get: function(entry, config){
 			const req = new XMLHttpRequest();
@@ -120,19 +131,35 @@ function APIClientFactory(registry){
 					config.failure(e);
 				};
 			}
-			let payload;
-			if(typeof entry.body === "object"){
-				payload = JSON.stringify(interpolate(config, entry.body));
-			}else{
-				payload = entry.body;
-			}
+			const payload = processPayload(entry.body, config);
 			req.send(payload);
 		},
-		put: function(entry){
-			console.log("put called for: " + entry.url);
-		},
-		_delete: function(entry, config){
+		put: function(entry, config){
 			const req = new XMLHttpRequest();
+			const timeout = config.timeout || entry.timeout || 0;
+			req.open('put', interpolate(entry.url, config));
+			Object.entries(entry.headers || {}).forEach(([header, value]) => {
+				req.setRequestHeader(header, interpolate(value, config));
+			});
+			req.onload = function(){
+				config.success(req.response);
+			};
+			req.onerror = function(e){
+				config.failure(e);
+			};
+			if(timeout > 0){
+				req.timeout = timeout;
+				req.ontimeout = function(e){
+					// console.log('timeout: ', timeout);
+					config.failure(e);
+				};
+			}
+			const payload = processPayload(entry.body, config);
+			req.send(payload);
+		},
+		delete: function(entry, config){
+			const req = new XMLHttpRequest();
+			const timeout = config.timeout || entry.timeout || 0;
 			req.open('delete', interpolate(entry.url, config));
 			Object.entries(entry.headers || {}).forEach(([header, value]) => {
 				req.setRequestHeader(header, interpolate(value, config));
@@ -143,6 +170,13 @@ function APIClientFactory(registry){
 			req.onerror = function(e){
 				config.failure(e);
 			};
+			if(timeout > 0){
+				req.timeout = timeout;
+				req.ontimeout = function(e){
+					// console.log('timeout: ', timeout);
+					config.failure(e);
+				};
+			}
 			req.send();
 		},
 		fetch: async function(entry, config){
@@ -181,7 +215,8 @@ function APIClientFactory(registry){
 					config.failure(e);
 				};
 			}
-			req.send(JSON.stringify(interpolate(entry.body, config)));
+			const payload = processPayload(entry.body, config);
+			req.send(payload);
 		}
 	};
 

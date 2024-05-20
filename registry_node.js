@@ -26,6 +26,10 @@ module.exports = Object.freeze({
 		host: 'localhost',
 		port: 3000,
 		path: '/path/elem/{{id}}',
+		headers: {
+			'Content-Type': 'application/x-www-form-urlencoded'
+		},
+		body: '{{payload}}'
 	},
 	deleteEndpoint: {
 		method: 'delete',
@@ -38,13 +42,32 @@ module.exports = Object.freeze({
 		}
 	},
 	fetchTest: {
-		url: 'http://localhost:3000/{{type}}/resource',
 		method: 'fetch',
 		fetchMethod: 'POST',
+		protocol: 'http:',
+		host: 'localhost',
+		port: 3000,
+		path: '/{{type}}/resource',
 		headers: {
-			'content-type': 'application/json'
+			'Content-Type': 'application/json'
 		},
 		body: '{{payload}}'
+	},
+	customTest: {
+		method: 'custom',
+		customMethod: 'post',
+		protocol: 'http:',
+		host: 'localhost',
+		port: 3000,
+		path: '/metrics',
+		headers: {
+			accept: 'application/json',
+			'content-type': 'application/json'
+		},
+		body: {
+			slot: '{{slot}}',
+			uuid: '{{uuid}}'
+		}
 	},
 	timeoutTest: {
 		method: 'post',
