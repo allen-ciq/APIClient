@@ -1,3 +1,8 @@
+const { default: Logger } = require('log-ng');
+
+Logger.setLogLevel('error');
+const logger = new Logger('BigIntMath.js');
+
 /*
  *	Governor rate limits calls to a given key
  *
@@ -31,8 +36,8 @@ function Governor(key, rate, period = "second"){
 		get: function cache(){
 			const now = Date.now();
 			const elapsed = now - (cache.last || 0);
-			// console.log(`now: ${now} last: ${cache.last} elapsed: ${elapsed}`)
-			// console.log(`Elapsed: ${elapsed} Throttle: ${throttleInterval}`);
+			logger.debug(`now: ${now} last: ${cache.last} elapsed: ${elapsed}`)
+			logger.debug(`Elapsed: ${elapsed} Throttle: ${throttleInterval}`);
 
 			const open = elapsed >= throttleInterval;
 			if(open){
@@ -105,7 +110,7 @@ function APIClientFactory(registry){
 			if(timeout > 0){
 				req.timeout = timeout;
 				req.ontimeout = function(e){
-					// console.log('timeout: ', timeout);
+					logger.debug('timeout: ', timeout);
 					config.failure(e);
 				};
 			}
@@ -127,7 +132,7 @@ function APIClientFactory(registry){
 			if(timeout > 0){
 				req.timeout = timeout;
 				req.ontimeout = function(e){
-					// console.log('timeout: ', timeout);
+					logger.debug('timeout: ', timeout);
 					config.failure(e);
 				};
 			}
@@ -150,7 +155,7 @@ function APIClientFactory(registry){
 			if(timeout > 0){
 				req.timeout = timeout;
 				req.ontimeout = function(e){
-					// console.log('timeout: ', timeout);
+					logger.debug('timeout: ', timeout);
 					config.failure(e);
 				};
 			}
@@ -173,7 +178,7 @@ function APIClientFactory(registry){
 			if(timeout > 0){
 				req.timeout = timeout;
 				req.ontimeout = function(e){
-					// console.log('timeout: ', timeout);
+					logger.debug('timeout: ', timeout);
 					config.failure(e);
 				};
 			}
@@ -191,7 +196,7 @@ function APIClientFactory(registry){
 				});
 				config.success(response);
 			}catch(e){
-				// console.error(e);
+				logger.error(e);
 				config.failure(e);
 			}
 		},
@@ -211,7 +216,7 @@ function APIClientFactory(registry){
 			if(timeout > 0){
 				req.timeout = timeout;
 				req.ontimeout = function(e){
-					// console.log('timeout: ', timeout);
+					logger.debug('timeout: ', timeout);
 					config.failure(e);
 				};
 			}
@@ -241,11 +246,11 @@ function APIClientFactory(registry){
 					}
 					if(Governor[key] === false){
 						const msg = `Call to ${key} throttled`;
-						// console.log(msg);
+						logger.debug(msg);
 						config.failure(msg);
 						return;
 					}
-					// console.log(`Call to ${key} not throttled`);
+					logger.debug(`Call to ${key} not throttled`);
 					client[entry.method].call(this, entry, config);
 				});
 			}

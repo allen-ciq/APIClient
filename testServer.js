@@ -1,11 +1,11 @@
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const express = require('express');
+const Logger = require('log-ng');
 const path = require('path');
+
 const app = express();
 const router = express.Router();
-const Logger = require('./logger');
-
 const logger = new Logger(path.basename(__filename));
 
 function processHeaders(req, res, next){
@@ -41,7 +41,7 @@ app.use(router);
 
 if(require.main === module){
 	app.listen(3000, 'localhost', () => {
-		console.log('Test server listening on http://localhost:3000');
+		logger.info('Test server listening on http://localhost:3000');
 	});
 }else{
 	module.exports = app;

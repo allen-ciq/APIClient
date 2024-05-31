@@ -1,5 +1,9 @@
 const http = require('http');
 const https = require('https');
+const Logger = require('log-ng');
+const path = require('path');
+
+const logger = new Logger(path.basename(__filename));
 
 /*
  *	Governor rate limits calls to a given key
@@ -140,19 +144,21 @@ function APIClientFactory(registry){
 			req.end();
 		},
 		fetch: async function(entry, config){
+			const url = `${entry.protocol}//${entry.host}:${entry.port || '80'}${entry.path}`;
+			logger.debug(url);
 			try{
-				const url = `${entry.protocol}//${entry.host}:${entry.port || '80'}${entry.path}`;
-				// console.log(url);
 				const response = await fetch(interpolate(url, config), {
 					method: entry.fetchMethod,
 					headers: Object.entries(entry.headers).reduce((acc, [k, v]) => {
 						acc[k] = v;
 						return acc;
 					}, {}),
-					body: interpolate(entry.body, config)
+					body: processPayload(entry.body, config)
 				});
 				config.success(response);
 			}catch(e){
+				logger.error(e);
+				logger.error(url);
 				config.failure(e);
 			}
 		},
@@ -199,11 +205,11 @@ function APIClientFactory(registry){
 					}
 					if(Governor[key] === false){
 						const msg = `Call to ${key} throttled`;
-						// console.log(msg);
+						logger.debug(msg);
 						config.failure(msg);
 						return;
 					}
-					// console.log(`Call to ${key} not throttled`);
+					logger.debug(`Call to ${key} not throttled`);
 					client[entry.method].call(this, entry, config);
 				});
 			}

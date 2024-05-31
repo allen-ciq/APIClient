@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "A client object that is bound to a set of endpoints",
   "main": "index.js",
+  "browser": {
+	  "index.js": "APIClient.js"
+  },
   "scripts": {
     "karma": "karma start",
     "test": "mocha",
@@ -23,5 +26,8 @@
     "karma-mocha-reporter": "^2.2.5",
     "mocha": "^10.2.0",
     "winston": "^3.11.0"
+  },
+  "dependencies": {
+    "log-ng": "github:stupid-genius/log-ng"
   }
 }
