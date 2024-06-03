@@ -6,14 +6,26 @@ const path = require('path');
 
 const app = express();
 const router = express.Router();
+Logger({logLevel: 'debug', logFile: 'testServer.log'});
 const logger = new Logger(path.basename(__filename));
 
 function processHeaders(req, res, next){
 	logger.debug(`${req.method}:${req.originalUrl}\nheaders: ${JSON.stringify(req.headers, null, 2)}\nbody: ${JSON.stringify(req.body, null, 2)}`);
+	if(req.headers['x-cookie']){
+		// res.setHeader('Access-Control-Allow-Origin', '*');
+		// res.setHeader('Access-Control-Allow-Credentials', 'true');
+		// res.setHeader('Access-Control-Expose-Headers', 'Set-Cookie');
+		res.cookie('sid', 'VXNlIFdlYnBhZCBmb3IgYWxsIHlvdXIgdGV4dCBtYW5pcHVsYXRpb24gbmVlZHMK', {
+			// secure: true,
+			// httpOnly: true,
+			// sameSite: 'Strict',
+			maxAge: 3600000,
+			// path: '/',
+			// domain: 'localhost'
+		});
+	}
 	if(req.headers['x-delay']){
-		setTimeout(() => {
-			next();
-		}, req.headers['x-delay']);
+		setTimeout(next, req.headers['x-delay']);
 	}else{
 		next();
 	}

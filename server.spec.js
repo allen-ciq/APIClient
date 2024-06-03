@@ -3,9 +3,10 @@ const { assert, expect } = chai;
 const Logger = require('log-ng');
 const path = require('path');
 const registry= require('./registry_node');
-const client = require('./APIClient_node')(registry);
 
+Logger({logLevel: 'error', logFile: 'APIClient.log'});
 const logger = new Logger(path.basename(__filename));
+const client = require('./APIClient_node')(registry);
 
 describe('APIClient (node)', function(){
 	it('should build from registry', function(){
@@ -17,7 +18,7 @@ describe('APIClient (node)', function(){
 		try{
 			const response = await client.getEndpoint({ search: 'term' });
 			const result = JSON.parse(response);
-			logger.info(JSON.stringify(result, null, 2));
+			logger.debug(JSON.stringify(result, null, 2));
 			assert.equal(result.method, 'GET');
 			expect(result.query.term).exist;
 		}catch(e){
@@ -25,6 +26,7 @@ describe('APIClient (node)', function(){
 				throw e;
 			}
 			logger.error(e);
+			assert(false, e);
 		}
 	});
 	it('should GET', function(done){
@@ -32,7 +34,7 @@ describe('APIClient (node)', function(){
 			search: 'term',
 			success: (res) => {
 				const result = JSON.parse(res);
-				logger.info(JSON.stringify(result, null, 2));
+				logger.debug(JSON.stringify(result, null, 2));
 				assert.equal(result.method, 'GET');
 				expect(result.query.term).exist;
 				done();
@@ -50,7 +52,7 @@ describe('APIClient (node)', function(){
 			password,
 			success: (res) => {
 				const result = JSON.parse(res);
-				logger.info(JSON.stringify(result, null, 2));
+				logger.debug(JSON.stringify(result, null, 2));
 				assert.equal(result.method, 'POST');
 				assert.equal(result.body.username, username);
 				assert.equal(result.body.password, password);
@@ -69,14 +71,16 @@ describe('APIClient (node)', function(){
 				payload: 'test=thing'
 			});
 			const result = JSON.parse(response);
-			logger.info(JSON.stringify(result, null, 2));
+			logger.debug(JSON.stringify(result, null, 2));
 			assert.equal(result.method, 'PUT');
 			assert.equal(result.path, `/path/elem/${id}`);
+			assert.deepEqual(result.body, {test: 'thing'});
 		}catch(e){
 			if (e instanceof chai.AssertionError) {
 				throw e;
 			}
 			logger.error(e);
+			assert(false, e);
 		}
 	});
 	it('should DELETE', async function(){
@@ -87,7 +91,7 @@ describe('APIClient (node)', function(){
 				token
 			});
 			const result = JSON.parse(response);
-			logger.info(JSON.stringify(result, null, 2));
+			logger.debug(JSON.stringify(result, null, 2));
 			assert.equal(result.method, 'DELETE');
 			expect(result.query.term).exist;
 			assert.equal(result.headers.not_a_cookie, `JSESSIONID=${token}`);
@@ -96,6 +100,7 @@ describe('APIClient (node)', function(){
 				throw e;
 			}
 			logger.error(e);
+			assert(false, e);
 		}
 	});
 	it('should use Fetch API', async function(){
@@ -109,15 +114,17 @@ describe('APIClient (node)', function(){
 				payload
 			});
 			const result = await response.json();
-			logger.info(JSON.stringify(result, null, 2));
+			logger.debug(JSON.stringify(result, null, 2));
 			assert.equal(result.method, 'POST');
 			assert.equal(result.path, `/${path}/resource`);
 			expect(result.body).deep.equal(payload);
+			assert.equal(response.headers.get('Set-Cookie').split(/;/)[0], 'sid=VXNlIFdlYnBhZCBmb3IgYWxsIHlvdXIgdGV4dCBtYW5pcHVsYXRpb24gbmVlZHMK');
 		}catch(e){
 			if (e instanceof chai.AssertionError) {
 				throw e;
 			}
 			logger.error(e);
+			assert(false, e);
 		}
 	});
 	it('should use custom', function(done){
@@ -128,10 +135,10 @@ describe('APIClient (node)', function(){
 			uuid,
 			success: (response) => {
 				const result = JSON.parse(response);
-				logger.info(JSON.stringify(result, null, 2));
-				assert.equal(result.method, 'POST');
+				logger.debug(JSON.stringify(result, null, 2));
+				assert.equal(result.method, 'PATCH');
 				assert.equal(result.path, '/metrics');
-				expect(result.body).deep.equal({slot: `${slot}`, uuid: `${uuid}`});
+				expect(result.body).deep.equal({slot, uuid: `${uuid}`});
 				done();
 			},
 			failure: (e) => {
@@ -143,13 +150,13 @@ describe('APIClient (node)', function(){
 		let shouldThrottle = false;
 		try{
 			let response = await client.throttleTest({});
-			logger.info(response);
+			logger.debug(response);
 			const result = JSON.parse(response);
 			assert.equal(result.method, 'GET');
 			shouldThrottle = true;
 			response = await client.throttleTest({});
 		}catch(e){
-			logger.debug('Caught: ', JSON.stringify(e, null, 2));
+			logger.debug(`Caught: ${JSON.stringify(e, null, 2)}`);
 			if(e instanceof chai.AssertionError){
 				throw e;
 			}
@@ -162,13 +169,13 @@ describe('APIClient (node)', function(){
 		try{
 			let response = await client.timeoutTest({});
 			const result = JSON.parse(response);
-			logger.info(JSON.stringify(result, null, 2));
+			logger.debug(JSON.stringify(result, null, 2));
 			assert.equal(result.method, 'POST');
 			assert.equal(result.path, '/timeout');
 			shouldTimeout = true;
 			response = await client.timeoutTest({ delay: 3000 });
 		}catch(e){
-			logger.debug('Caught: ', JSON.stringify(e, null, 2));
+			logger.debug(`Caught: ${JSON.stringify(e, null, 2)}`);
 			if(e instanceof chai.AssertionError){
 				throw e;
 			}

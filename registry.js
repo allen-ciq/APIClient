@@ -34,7 +34,8 @@ export const registry = Object.freeze({
 		method: 'fetch',
 		fetchMethod: 'POST',
 		headers: {
-			'content-type': 'application/json'
+			'content-type': 'application/json',
+			'x-cookie': true
 		},
 		body: '{{payload}}'
 	},
@@ -44,7 +45,7 @@ export const registry = Object.freeze({
 		customMethod: 'post',
 		headers: {
 			accept: 'application/json',
-			'content-type': 'application/json'
+			'Content-Type': 'application/x-www-form-urlencoded'
 		},
 		body: {
 			slot: '{{slot}}',

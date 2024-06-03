@@ -2,7 +2,10 @@ const http = require('http');
 const https = require('https');
 const Logger = require('log-ng');
 const path = require('path');
+const interpolate = require('./interpolator');
+const processPayload = require('./processPayload');
 
+Logger({logLevel: 'debug', logFile: 'APIClient.log'});
 const logger = new Logger(path.basename(__filename));
 
 /*
@@ -75,85 +78,71 @@ function APIClientFactory(registry){
 		return client;
 	}
 
-	const interpolate = function interpolator(template = "", model){
-		if(template instanceof Object){
-			const interpolated = template instanceof Array ? [] : {};
-			for(const o in template){
-				interpolated[o] = interpolator(template[o], model);
-			}
-			return interpolated;
-		}
-		if(typeof template !== 'string'){
-			return template;
-		}
-		return template.replace(/\{\{(.+?)\}\}/g, function(_match, br){
-			const val = model[br] || "";
-			if(val instanceof Object){
-				return JSON.stringify(val);
-			}
-			return encodeURI(val);
-		});
-	};
-
 	function httpHandler(entry, config){
-		const options = {
-			...entry,
-			...config,
-			host: interpolate(entry.host, config),
-			path: interpolate(entry.path, config),
-			headers: interpolate(entry.headers, config)
-		};
-		const client = getClient(entry.protocol);
-		return client.request(options, (res) => {
-			let response = '';
-			res.on('data', (chunk) => {response += chunk})
-				.on('end', () => {config.success(response)})
-				.on('error', config.failure)
-				.on('timeout', config.failure);
-		});
-	}
-
-	// TODO: use content header to process
-	function processPayload(template, config){
-		let payload;
-		if(typeof template === "object"){
-			payload = JSON.stringify(interpolate(template, config));
-		}else{
-			payload = interpolate(template, config);
+		try{
+			const options = {
+				...entry,
+				...config,
+				host: interpolate(entry.host, config),
+				path: interpolate(entry.path, config),
+				headers: interpolate(entry.headers, config)
+			};
+			logger.debug(JSON.stringify(options, null, 2));
+			const client = getClient(options.protocol);
+			return client.request(options, (res) => {
+				let response = '';
+				res.on('data', (chunk) => {response += chunk})
+					.on('end', () => {config.success(response)})
+					.on('error', config.failure)
+					.on('timeout', config.failure);
+			});
+		}catch(e){
+			logger.error(e);
+			config.failure(e);
 		}
-		return payload;
 	}
 
 	const client = {
 		get: function(entry, config){
+			logger.debug('get call');
 			const req = httpHandler(entry, config);
 			req.end();
 		},
 		post: function(entry, config){
+			logger.debug('post call');
 			const req = httpHandler(entry, config);
-			req.write(processPayload(entry.body, config));
+			const payload = processPayload(entry, config);
+			if(payload !== undefined){
+				req.write(payload);
+			}
 			req.end();
 		},
 		put: function(entry, config){
+			logger.debug('put call');
 			const req = httpHandler(entry, config);
-			req.write(processPayload(entry.body, config));
+			const payload = processPayload(entry, config);
+			if(payload !== undefined){
+				req.write(payload);
+			}
 			req.end();
 		},
 		delete: function(entry, config){
+			logger.debug('delete call');
 			const req = httpHandler(entry, config);
 			req.end();
 		},
 		fetch: async function(entry, config){
+			logger.debug('fetch call');
 			const url = `${entry.protocol}//${entry.host}:${entry.port || '80'}${entry.path}`;
 			logger.debug(url);
 			try{
 				const response = await fetch(interpolate(url, config), {
 					method: entry.fetchMethod,
-					headers: Object.entries(entry.headers).reduce((acc, [k, v]) => {
+					headers: Object.entries(entry.headers || {}).reduce((acc, [k, v]) => {
 						acc[k] = v;
 						return acc;
 					}, {}),
-					body: processPayload(entry.body, config)
+					body: processPayload(entry, config)
 				});
 				config.success(response);
 			}catch(e){
@@ -163,6 +152,7 @@ function APIClientFactory(registry){
 			}
 		},
 		custom: function(entry, config){
+			logger.debug('custom call');
 			const options = {
 				...entry,
 				...config,
@@ -179,7 +169,10 @@ function APIClientFactory(registry){
 					.on('error', config.failure)
 					.on('timeout', config.failure);
 			});
-			req.write(processPayload(entry.body, config));
+			const payload = processPayload(entry, config);
+			if(payload !== undefined){
+				req.write(payload);
+			}
 			req.end();
 		}
 	};

@@ -5,6 +5,7 @@ const client = require('./APIClient').APIClient(registry);
 
 const {assert, expect} = chai;
 const logger = new Logger('spec.js');
+Logger.setLogLevel('error');
 
 describe('APIClient (browser)', function(){
 	it('should build from registry', function(){
@@ -16,7 +17,7 @@ describe('APIClient (browser)', function(){
 		try{
 			const response = await client.getEndpoint({search: 'term'});
 			const result = JSON.parse(response);
-			logger.info(JSON.stringify(result, null, 2));
+			logger.debug(JSON.stringify(result, null, 2));
 			assert.equal(result.method, 'GET');
 			expect(result.query.term).exist;
 		}catch(e){
@@ -31,10 +32,10 @@ describe('APIClient (browser)', function(){
 			search: 'term',
 			success: (res) => {
 				const result = JSON.parse(res);
-				logger.info(JSON.stringify(result, null, 2));
+				logger.debug(JSON.stringify(result, null, 2));
 				assert.equal(result.method, 'GET');
 				expect(result.query.term).exist;
-				done();
+				setTimeout(done,1);
 			},
 			failure: (err) => {
 				assert(false, err);
@@ -48,12 +49,13 @@ describe('APIClient (browser)', function(){
 			username,
 			password,
 			success: (res) => {
+				logger.debug(`response ${res}`);
 				const result = JSON.parse(res);
-				logger.info(JSON.stringify(result, null, 2));
+				logger.debug(JSON.stringify(result, null, 2));
 				assert.equal(result.method, 'POST');
 				assert.equal(result.body.username, username);
 				assert.equal(result.body.password, password);
-				done();
+				setTimeout(done,1);
 			},
 			failure: (err) => {
 				assert(false, err);
@@ -68,7 +70,7 @@ describe('APIClient (browser)', function(){
 				payload: 'test=thing'
 			});
 			const result = JSON.parse(response);
-			logger.info(JSON.stringify(result, null, 2));
+			logger.debug(JSON.stringify(result, null, 2));
 			assert.equal(result.method, 'PUT');
 			assert.equal(result.path, `/path/elem/${id}`);
 		}catch(e){
@@ -76,6 +78,7 @@ describe('APIClient (browser)', function(){
 				throw e;
 			}
 			logger.error(e);
+			assert(false, e);
 		}
 	});
 	it('should DELETE', async function(){
@@ -86,7 +89,7 @@ describe('APIClient (browser)', function(){
 				token
 			});
 			const result = JSON.parse(response);
-			logger.info(JSON.stringify(result, null, 2));
+			logger.debug(JSON.stringify(result, null, 2));
 			assert.equal(result.method, 'DELETE');
 			expect(result.query.term).exist;
 			assert.equal(result.headers.not_a_cookie, `SESSIONID=${token}`);
@@ -95,6 +98,7 @@ describe('APIClient (browser)', function(){
 				throw e;
 			}
 			logger.error(e);
+			assert(false, e);
 		}
 	});
 	it('should use Fetch API', async function(){
@@ -108,15 +112,18 @@ describe('APIClient (browser)', function(){
 				payload
 			});
 			const result = await response.json();
-			logger.info('result: ', JSON.stringify(result, null, 2));
+			logger.debug(`result: ${JSON.stringify(result, null, 2)}`);
+			logger.debug(`cookie: ${response.headers.get('Set-Cookie')}`);
 			assert.equal(result.method, 'POST');
 			assert.equal(result.path, `/${path}/resource`);
 			expect(result.body).deep.equal(payload);
+			// assert.equal(response.headers.get('Set-Cookie').split(/;/)[0], 'sid=VXNlIFdlYnBhZCBmb3IgYWxsIHlvdXIgdGV4dCBtYW5pcHVsYXRpb24gbmVlZHMK');
 		}catch(e){
 			if(e instanceof chai.AssertionError){
 				throw e;
 			}
 			logger.error(e);
+			assert(false, e);
 		}
 	});
 	it('should use custom', function(done){
@@ -127,7 +134,7 @@ describe('APIClient (browser)', function(){
 			uuid,
 			success: (response) => {
 				const result = JSON.parse(response);
-				logger.info(JSON.stringify(result, null, 2));
+				logger.debug(JSON.stringify(result, null, 2));
 				assert.equal(result.method, 'POST');
 				assert.equal(result.path, '/metrics');
 				expect(result.body).deep.equal({slot: `${slot}`, uuid: `${uuid}`});
@@ -143,12 +150,12 @@ describe('APIClient (browser)', function(){
 		try{
 			let response = await client.throttleTest({});
 			const result = await response.json();
-			logger.info('result: ', JSON.stringify(result, null, 2));
+			logger.debug(`result: ${JSON.stringify(result, null, 2)}`);
 			assert.equal(result.method, 'POST');
 			shouldThrottle = true;
 			response = await client.throttleTest({});
 		}catch(e){
-			logger.debug('Caught: ', JSON.stringify(e, null, 2));
+			logger.debug(`Caught: ${JSON.stringify(e, null, 2)}`);
 			if(e instanceof chai.AssertionError){
 				throw e;
 			}
@@ -161,13 +168,13 @@ describe('APIClient (browser)', function(){
 		try{
 			let response = await client.timeoutTest({});
 			const result = JSON.parse(response);
-			logger.info(JSON.stringify(result, null, 2));
+			logger.debug(`result: ${JSON.stringify(result, null, 2)}`);
 			assert.equal(result.method, 'POST');
 			assert.equal(result.path, '/timeout');
 			shouldTimeout = true;
 			response = await client.timeoutTest({delay: 3000});
 		}catch(e){
-			logger.debug('Caught: ', JSON.stringify(e, null, 2));
+			logger.debug(`Caught: ${JSON.stringify(e, null, 2)}`);
 			if(e instanceof chai.AssertionError){
 				throw e;
 			}

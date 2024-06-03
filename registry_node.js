@@ -49,13 +49,14 @@ module.exports = Object.freeze({
 		port: 3000,
 		path: '/{{type}}/resource',
 		headers: {
-			'Content-Type': 'application/json'
+			'Content-Type': 'application/json',
+			'x-cookie': true
 		},
 		body: '{{payload}}'
 	},
 	customTest: {
 		method: 'custom',
-		customMethod: 'post',
+		customMethod: 'patch',
 		protocol: 'http:',
 		host: 'localhost',
 		port: 3000,

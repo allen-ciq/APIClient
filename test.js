@@ -5,7 +5,6 @@ const path = require('path');
 
 Logger({logLevel: 'error', logFile: 'APIClient.log'});
 const logger = new Logger(path.basename(__filename));
-Logger.setLogLevel('error');
 
 const app = require('./testServer');
 const mocha = new Mocha();

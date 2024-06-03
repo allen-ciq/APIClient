@@ -1,7 +1,8 @@
-const { default: Logger } = require('log-ng');
+const {default: Logger} = require('log-ng');
+const interpolate = require('./interpolator');
+const processPayload = require('./processPayload');
 
-Logger.setLogLevel('error');
-const logger = new Logger('BigIntMath.js');
+const logger = new Logger('APIClient.js');
 
 /*
  *	Governor rate limits calls to a given key
@@ -62,129 +63,64 @@ function APIClientFactory(registry){
 		return APIClientFactory.instance;
 	}
 
-	const interpolate = function interpolator(template = "", model){
-		if(template instanceof Object){
-			const interpolated = template instanceof Array ? [] : {};
-			for(const o in template){
-				interpolated[o] = interpolator(template[o], model);
-			}
-			return interpolated;
-		}
-		if(typeof template !== 'string'){
-			return template;
-		}
-		return template.replace(/\{\{(.+?)\}\}/g, function(_match, br){
-			const val = model[br] || "";
-			if(val instanceof Object){
-				return JSON.stringify(val);
-			}
-			return encodeURI(val);
-		});
-	};
 
-	// TODO: use content header to process
-	function processPayload(template, config){
-		let payload;
-		if(typeof template === "object"){
-			payload = JSON.stringify(interpolate(template, config));
-		}else{
-			payload = interpolate(template, config);
+	function httpHandler(entry, config){
+		try{
+			const req = new XMLHttpRequest();
+			const timeout = config.timeout || entry.timeout || 0;
+			req.open(entry.method, interpolate(entry.url, config));
+			Object.entries(entry.headers || {}).forEach(([header, value]) => {
+				req.setRequestHeader(header, interpolate(value, config));
+			});
+			req.onload = function(){
+				config.success(req.response);
+			};
+			req.onerror = function(e){
+				config.failure(e);
+			};
+			if(timeout > 0){
+				req.timeout = timeout;
+				req.ontimeout = function(e){
+					logger.debug('timeout: ', timeout);
+					config.failure(e);
+				};
+			}
+			if(entry.body !== undefined){
+				req.body = interpolate(entry.body, config);
+			}
+			return req;
+		}catch(e){
+			logger.error(e);
+			config.failure(e);
 		}
-		return payload;
 	}
 
 	const client = {
 		get: function(entry, config){
-			const req = new XMLHttpRequest();
-			const timeout = config.timeout || entry.timeout || 0;
-			req.open(entry.method, interpolate(entry.url, config));
-			Object.entries(entry.headers || {}).forEach(([header, value]) => {
-				req.setRequestHeader(header, interpolate(value, config));
-			});
-			req.onload = function(){
-				config.success(req.response);
-			};
-			req.onerror = function(e){
-				config.failure(e);
-			};
-			if(timeout > 0){
-				req.timeout = timeout;
-				req.ontimeout = function(e){
-					logger.debug('timeout: ', timeout);
-					config.failure(e);
-				};
-			}
+			logger.debug('get call');
+			const req = httpHandler(entry, config);
 			req.send();
 		},
 		post: function(entry, config){
-			const req = new XMLHttpRequest();
-			const timeout = config.timeout || entry.timeout || 0;
-			req.open(entry.method, interpolate(entry.url, config));
-			Object.entries(entry.headers || {}).forEach(([header, value]) => {
-				req.setRequestHeader(header, interpolate(value, config));
-			});
-			req.onload = function(){
-				config.success(req.response);
-			};
-			req.onerror = function(e){
-				config.failure(e);
-			};
-			if(timeout > 0){
-				req.timeout = timeout;
-				req.ontimeout = function(e){
-					logger.debug('timeout: ', timeout);
-					config.failure(e);
-				};
-			}
-			const payload = processPayload(entry.body, config);
+			logger.debug('post call');
+			logger.debug(`entry: ${JSON.stringify(entry, null, 2)}`);
+			const req = httpHandler(entry, config);
+			const payload = processPayload(entry, config);
 			req.send(payload);
 		},
 		put: function(entry, config){
-			const req = new XMLHttpRequest();
-			const timeout = config.timeout || entry.timeout || 0;
-			req.open('put', interpolate(entry.url, config));
-			Object.entries(entry.headers || {}).forEach(([header, value]) => {
-				req.setRequestHeader(header, interpolate(value, config));
-			});
-			req.onload = function(){
-				config.success(req.response);
-			};
-			req.onerror = function(e){
-				config.failure(e);
-			};
-			if(timeout > 0){
-				req.timeout = timeout;
-				req.ontimeout = function(e){
-					logger.debug('timeout: ', timeout);
-					config.failure(e);
-				};
-			}
-			const payload = processPayload(entry.body, config);
+			logger.debug('put call');
+			const req = httpHandler(entry, config);
+			const payload = processPayload(entry, config);
 			req.send(payload);
 		},
 		delete: function(entry, config){
-			const req = new XMLHttpRequest();
-			const timeout = config.timeout || entry.timeout || 0;
-			req.open('delete', interpolate(entry.url, config));
-			Object.entries(entry.headers || {}).forEach(([header, value]) => {
-				req.setRequestHeader(header, interpolate(value, config));
-			});
-			req.onload = function(){
-				config.success(req.response);
-			};
-			req.onerror = function(e){
-				config.failure(e);
-			};
-			if(timeout > 0){
-				req.timeout = timeout;
-				req.ontimeout = function(e){
-					logger.debug('timeout: ', timeout);
-					config.failure(e);
-				};
-			}
+			logger.debug('delete call');
+			const req = httpHandler(entry, config);
 			req.send();
 		},
 		fetch: async function(entry, config){
+			logger.debug('fetch call');
 			try{
 				const response = await fetch(interpolate(entry.url, config), {
 					method: entry.fetchMethod,
@@ -192,7 +128,7 @@ function APIClientFactory(registry){
 						acc[k] = v;
 						return acc;
 					}, {}),
-					body: interpolate(entry.body, config)
+					body: processPayload(entry, config)
 				});
 				config.success(response);
 			}catch(e){
@@ -201,6 +137,7 @@ function APIClientFactory(registry){
 			}
 		},
 		custom: function(entry, config){
+			logger.debug('custom call');
 			const timeout = config.timeout || entry.timeout || 0;
 			const req = new XMLHttpRequest();
 			req.open(entry.customMethod, interpolate(entry.url, config), timeout > 0);
@@ -220,7 +157,7 @@ function APIClientFactory(registry){
 					config.failure(e);
 				};
 			}
-			const payload = processPayload(entry.body, config);
+			const payload = processPayload(entry, config);
 			req.send(payload);
 		}
 	};
