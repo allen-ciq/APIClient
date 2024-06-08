@@ -63,7 +63,7 @@ module.exports = Object.freeze({
 		path: '/metrics',
 		headers: {
 			accept: 'application/json',
-			'content-type': 'application/json'
+			'content-type': 'application/x-www-form-urlencoded'
 		},
 		body: {
 			slot: '{{slot}}',

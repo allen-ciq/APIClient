@@ -138,7 +138,7 @@ describe('APIClient (node)', function(){
 				logger.debug(JSON.stringify(result, null, 2));
 				assert.equal(result.method, 'PATCH');
 				assert.equal(result.path, '/metrics');
-				expect(result.body).deep.equal({slot, uuid: `${uuid}`});
+				expect(result.body).deep.equal({slot: `${slot}`, uuid: `${uuid}`});
 				done();
 			},
 			failure: (e) => {

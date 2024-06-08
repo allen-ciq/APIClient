@@ -17,12 +17,12 @@ function interpolator(template = "", model = {}){
 		return template;
 	}
 	return template.replace(/\{\{(.+?)\}\}/g, function(_match, br){
-			const val = model[br] || "";
-			if(val instanceof Object){
+		const val = model[br] || "";
+		if(val instanceof Object){
 			return JSON.stringify(val);
-			}
-			return encodeURI(val);
-			});
+		}
+		return val;
+	});
 };
 
 module.exports = interpolator;

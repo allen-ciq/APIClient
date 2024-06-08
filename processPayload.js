@@ -12,7 +12,7 @@ function processPayload(entry, config){
 	const interpolated = interpolate(entry, config);
 	const contentType = interpolated.headers?.['Content-Type'] || interpolated.headers?.['content-type'];
 	logger.debug(`contentType: ${contentType}`);
-	logger.debug(`body: ${interpolated.body}`);
+	logger.debug(`body: ${JSON.stringify(interpolated.body)}`);
 	let payload;
 
 	switch(contentType){
@@ -33,9 +33,9 @@ function processPayload(entry, config){
 			// payload = new FormData();
 			break;
 		default:
-			payload = interpolated.body;
+			payload = JSON.stringify(interpolated.body);
 	}
-	logger.debug(`payload: ${JSON.stringify(payload, null, 2)}`);
+	logger.debug(`payload: ${payload}`);
 	return payload;
 }
 
