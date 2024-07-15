@@ -134,8 +134,7 @@ function APIClientFactory(registry){
 		}
 	};
 
-	Object.keys(registry).forEach((key) => {
-		const entry = registry[key];
+	Object.entries(registry).forEach(([key, entry]) => {
 		if(entry.rate){
 			Governor(key, entry.rate, entry.period);
 		}
@@ -160,6 +159,7 @@ function APIClientFactory(registry){
 						return;
 					}
 					logger.debug(`Call to ${key} not throttled`);
+					logger.debug(`Using entry:\n${JSON.stringify(entry, null, 2)}\nand config:\n${JSON.stringify(config, null, 2)}`);
 					client[entry.method].call(this, entry, config);
 				});
 			}

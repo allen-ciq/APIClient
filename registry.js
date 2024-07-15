@@ -15,7 +15,7 @@ export const registry = Object.freeze({
 		}
 	},
 	putEndpoint: {
-		url: 'http://localhost:3000/path/elem/{{id}}',
+		url: 'http://localhost:3000/path/elem/{{id}}/{{id}}',
 		method: 'put',
 		headers: {
 			'Content-Type': 'application/x-www-form-urlencoded'

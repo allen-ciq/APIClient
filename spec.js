@@ -72,7 +72,7 @@ describe('APIClient (browser)', function(){
 			const result = JSON.parse(response);
 			logger.debug(JSON.stringify(result, null, 2));
 			assert.equal(result.method, 'PUT');
-			assert.equal(result.path, `/path/elem/${id}`);
+			assert.equal(result.path, `/path/elem/${id}/${id}`);
 		}catch(e){
 			if(e instanceof chai.AssertionError){
 				throw e;
