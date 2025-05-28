@@ -2,9 +2,9 @@ const http = require('http');
 const https = require('https');
 const Logger = require('log-ng');
 const path = require('path');
-const Governor = require('./Governor');
-const interpolate = require('./interpolator');
-const processPayload = require('./processPayload');
+const Governor = require('./Governor.js');
+const interpolate = require('./interpolator.js');
+const processPayload = require('./processPayload.js');
 
 const logger = new Logger(path.basename(__filename));
 
@@ -49,7 +49,18 @@ function APIClientFactory(registry){
 			return client.request(options, (res) => {
 				let response = '';
 				res.on('data', (chunk) => {response += chunk})
-					.on('end', () => {config.success(response)})
+					.on('end', () => {
+						logger.debug(`Response: ${response}`);
+						if(res.statusCode >= 400){
+							const error = new Error(`HTTP Error: ${res.statusCode}`);
+							error.status = res.statusCode;
+							error.statusText = res.statusMessage;
+							error.response = response;
+							config.failure(error);
+							return;
+						}
+						config.success(response)
+					})
 					.on('error', config.failure)
 					.on('timeout', config.failure);
 			});

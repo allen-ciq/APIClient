@@ -89,5 +89,15 @@ module.exports = Object.freeze({
 		path: '/',
 		rate: 1,
 		period: 'minute'
+	},
+	failureTest: {
+		method: 'get',
+		protocol: 'http:',
+		host: 'localhost',
+		port: 3000,
+		path: '/failure',
+		headers: {
+			'x-failure': 501
+		}
 	}
 });

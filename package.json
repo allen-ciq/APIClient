@@ -7,8 +7,9 @@
 	  "index.js": "APIClient.js"
   },
   "scripts": {
-    "karma": "karma start",
-    "test": "mocha",
+    "karma": "node testServer.js & SERVER_PID=$! && karma start; kill $SERVER_PID",
+    "mocha": "mocha --require test.js server.spec.js",
+    "test": "npm run mocha; npm run karma",
     "testServer": "node testServer.js"
   },
   "author": "Stupid Genius Software",

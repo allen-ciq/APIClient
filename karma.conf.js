@@ -15,8 +15,8 @@ module.exports = function(config) {
 			'spec.js'
 		],
 		// list of files / patterns to exclude
-		exclude: [
-		],
+		// exclude: [
+		// ],
 		// preprocess matching files before serving them to the browser
 		// available preprocessors: https://www.npmjs.com/search?q=keywords:karma-preprocessor
 		preprocessors: {
@@ -42,14 +42,14 @@ module.exports = function(config) {
 		// loggers: [
 		// 	{type: 'console'}
 		// ],
-		// browserConsoleLogOptions: {
-		// 	level: 'log',
-		// 	format: '%b %T: %m',
-		// 	terminal: true,
-		// },
-		// client: {
-		// 	captureConsole: true
-		// },
+		browserConsoleLogOptions: {
+			level: 'debug',
+			format: '%b %T: %m',
+			terminal: true,
+		},
+		client: {
+			captureConsole: true
+		},
 		// enable / disable watching file and executing tests whenever any file changes
 		autoWatch: false,
 		customLaunchers: {

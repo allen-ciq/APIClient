@@ -6,11 +6,17 @@ const path = require('path');
 
 const app = express();
 const router = express.Router();
-Logger({logLevel: 'debug', logFile: 'testServer.log'});
+Logger({logLevel: 'error', logFile: 'testServer.log'});
 const logger = new Logger(path.basename(__filename));
 
 function processHeaders(req, res, next){
 	logger.debug(`${req.method}:${req.originalUrl}\nheaders: ${JSON.stringify(req.headers, null, 2)}\nbody: ${JSON.stringify(req.body, null, 2)}`);
+	if(req.headers['x-failure']){
+		const status = parseInt(req.headers['x-failure'], 10) || 500;
+		logger.error(`Simulated server error: ${status}`);
+		res.status(status).send('Simulated server error').end();
+		return;
+	}
 	if(req.headers['x-cookie']){
 		// res.setHeader('Access-Control-Allow-Origin', '*');
 		// res.setHeader('Access-Control-Allow-Credentials', 'true');

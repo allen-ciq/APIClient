@@ -1,7 +1,7 @@
 const chai = require('chai');
 const { default: Logger } = require('log-ng');
-const registry = require('./registry').registry;
-const client = require('./APIClient').APIClient(registry);
+const registry = require('./registry.js').registry;
+const client = require('./APIClient.js').APIClient(registry);
 
 const {assert, expect} = chai;
 const logger = new Logger('spec.js');
@@ -180,5 +180,21 @@ describe('APIClient (browser)', function(){
 			}
 			assert(shouldTimeout, 'should not have timed out');
 		}
+	});
+	it('should handle server failure', function(done){
+		client.failureTest({
+			success: (res) => {
+				logger.error(`response: ${res.status}`);
+				assert(false, 'should not have succeeded');
+			},
+			failure: (err) => {
+				logger.debug(`failure: ${JSON.stringify(err, null, 2)}`);
+				assert(err instanceof Error, 'should have thrown an error');
+				assert(err.status === registry.failureTest.headers['x-failure'], 'should have failed with correct status');
+				assert(err.statusText === 'Not Implemented', 'should have correct status text');
+				assert(err.response === 'Simulated server error', 'should have correct error message');
+				done();
+			}
+		});
 	});
 });

@@ -1,7 +1,7 @@
 const {default: Logger} = require('log-ng');
-const Governor = require('./Governor');
-const interpolate = require('./interpolator');
-const processPayload = require('./processPayload');
+const Governor = require('./Governor.js');
+const interpolate = require('./interpolator.js');
+const processPayload = require('./processPayload.js');
 
 const logger = new Logger('APIClient.js');
 
@@ -28,10 +28,27 @@ function APIClientFactory(registry){
 				req.setRequestHeader(header, interpolate(value, config));
 			});
 			req.onload = function(){
+				logger.debug(`Response received: ${req.status} ${req.statusText}`);
+				if(req.status >= 400){
+					logger.error(`Error: ${req.status} ${req.statusText}`);
+					const error = new Error(`HTTP Error: ${req.status}`);
+					error.status = req.status;
+					error.statusText = req.statusText;
+					error.response = req.response;
+					config.failure(error);
+					return;
+				}
+
 				config.success(req.response);
 			};
 			req.onerror = function(e){
-				config.failure(e);
+				logger.error(`Error: ${JSON.stringify(e)}`);
+				config.failure({
+					status: req.status,
+					statusText: req.statusText,
+					response: req.response,
+					error: e
+				});
 			};
 			if(timeout > 0){
 				req.timeout = timeout;

@@ -67,5 +67,12 @@ export const registry = Object.freeze({
 		fetchMethod: 'post',
 		rate: 1,
 		period: 'minute'
+	},
+	failureTest: {
+		url: 'http://localhost:3000/failure',
+		method: 'get',
+		headers: {
+			'x-failure': 501
+		}
 	}
 });
