@@ -43,20 +43,7 @@ module.exports = Object.freeze({
 	},
 	fetchTest: {
 		method: 'fetch',
-		fetchMethod: 'POST',
-		protocol: 'http:',
-		host: 'localhost',
-		port: 3000,
-		path: '/{{type}}/resource',
-		headers: {
-			'Content-Type': 'application/json',
-			'x-cookie': true
-		},
-		body: '{{payload}}'
-	},
-	customTest: {
-		method: 'custom',
-		customMethod: 'patch',
+		fetchMethod: 'post',
 		protocol: 'http:',
 		host: 'localhost',
 		port: 3000,
@@ -69,6 +56,35 @@ module.exports = Object.freeze({
 			slot: '{{slot}}',
 			uuid: '{{uuid}}'
 		}
+	},
+	customXHRTest: {
+		method: 'xhr',
+		customMethod: 'PATCH',
+		protocol: 'http:',
+		host: 'localhost',
+		port: 3000,
+		path: '/metrics',
+		headers: {
+			accept: 'application/json',
+			'content-type': 'application/x-www-form-urlencoded'
+		},
+		body: {
+			slot: '{{slot}}',
+			uuid: '{{uuid}}'
+		}
+	},
+	customFetchTest: {
+		method: 'customFetch',
+		fetchMethod: 'POST',
+		protocol: 'http:',
+		host: 'localhost',
+		port: 3000,
+		path: '/{{type}}/resource',
+		headers: {
+			'Content-Type': 'application/json',
+			'x-cookie': true
+		},
+		body: '{{payload}}'
 	},
 	timeoutTest: {
 		method: 'post',
@@ -90,7 +106,18 @@ module.exports = Object.freeze({
 		rate: 1,
 		period: 'minute'
 	},
-	failureTest: {
+	failureTestFetch: {
+		method: 'fetch',
+		fetchMethod: 'get',
+		protocol: 'http:',
+		host: 'localhost',
+		port: 3000,
+		path: '/failure',
+		headers: {
+			'x-failure': 500
+		}
+	},
+	failureTestXHR: {
 		method: 'get',
 		protocol: 'http:',
 		host: 'localhost',

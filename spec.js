@@ -102,22 +102,17 @@ describe('APIClient (browser)', function(){
 		}
 	});
 	it('should use Fetch API', async function(){
-		const path = 'category';
-		const payload = {
-			test: true
-		};
+		const slot = 100;
+		const uuid = 'QWxsZW4gd2FzIGhlcmUK';
 		try{
-			const response = await client.fetchTest({
-				type: path,
-				payload
+			const result = await client.fetchTest({
+				slot,
+				uuid
 			});
-			const result = await response.json();
 			logger.debug(`result: ${JSON.stringify(result, null, 2)}`);
-			logger.debug(`cookie: ${response.headers.get('Set-Cookie')}`);
 			assert.equal(result.method, 'POST');
-			assert.equal(result.path, `/${path}/resource`);
-			expect(result.body).deep.equal(payload);
-			// assert.equal(response.headers.get('Set-Cookie').split(/;/)[0], 'sid=VXNlIFdlYnBhZCBmb3IgYWxsIHlvdXIgdGV4dCBtYW5pcHVsYXRpb24gbmVlZHMK');
+			assert.equal(result.path, '/metrics');
+			expect(result.body).deep.equal({slot: `${slot}`, uuid: `${uuid}`});
 		}catch(e){
 			if(e instanceof chai.AssertionError){
 				throw e;
@@ -126,16 +121,16 @@ describe('APIClient (browser)', function(){
 			assert(false, e);
 		}
 	});
-	it('should use custom', function(done){
+	it('should use custom XHR', function(done){
 		const slot = 100;
 		const uuid = 'QWxsZW4gd2FzIGhlcmUK';
-		client.customTest({
+		client.customXHRTest({
 			slot,
 			uuid,
 			success: (response) => {
 				const result = JSON.parse(response);
 				logger.debug(JSON.stringify(result, null, 2));
-				assert.equal(result.method, 'POST');
+				assert.equal(result.method, registry.customXHRTest.customMethod);
 				assert.equal(result.path, '/metrics');
 				expect(result.body).deep.equal({slot: `${slot}`, uuid: `${uuid}`});
 				done();
@@ -145,15 +140,38 @@ describe('APIClient (browser)', function(){
 			}
 		});
 	});
+	it('should use custom fetch', async function(){
+		const path = 'category';
+		const payload = {
+			test: true
+		};
+		try{
+			const response = await client.customFetchTest({
+				type: path,
+				payload
+			});
+			const result = await response.json();
+			logger.debug(`result: ${JSON.stringify(result, null, 2)}`);
+			assert.equal(result.method, registry.customFetchTest.fetchMethod.toUpperCase());
+			assert.equal(result.path, `/${path}/resource`);
+			assert.equal(response.status, 200);
+			expect(result.body).deep.equal(payload);
+		}catch(e){
+			if(e instanceof chai.AssertionError){
+				throw e;
+			}
+			logger.error(e);
+			assert(false, e);
+		}
+	});
 	it('should support rate limiting', async function(){
 		let shouldThrottle = false;
 		try{
-			let response = await client.throttleTest({});
-			const result = await response.json();
+			let result = await client.throttleTest({});
 			logger.debug(`result: ${JSON.stringify(result, null, 2)}`);
 			assert.equal(result.method, 'POST');
 			shouldThrottle = true;
-			response = await client.throttleTest({});
+			result = await client.throttleTest({});
 		}catch(e){
 			logger.debug(`Caught: ${JSON.stringify(e, null, 2)}`);
 			if(e instanceof chai.AssertionError){
@@ -181,8 +199,21 @@ describe('APIClient (browser)', function(){
 			assert(shouldTimeout, 'should not have timed out');
 		}
 	});
-	it('should handle server failure', function(done){
-		client.failureTest({
+	it('should handle server failure (fetch)', async function(){
+		try{
+			const response = await client.failureTestFetch({});
+			logger.error(`response: ${response.status}`);
+			assert(false, 'should not have succeeded');
+		}catch(err){
+			logger.debug(`failure: ${JSON.stringify(err, null, 2)}`);
+			assert(err instanceof Error, 'should have thrown an error');
+			assert(err.status === registry.failureTestFetch.headers['x-failure'], 'should have failed with correct status');
+			assert(err.statusText === 'Internal Server Error', 'should have correct status text');
+			assert(err.response === 'Simulated server error', 'should have correct error message');
+		}
+	});
+	it('should handle server failure (XHR)', function(done){
+		client.failureTestXHR({
 			success: (res) => {
 				logger.error(`response: ${res.status}`);
 				assert(false, 'should not have succeeded');
@@ -190,10 +221,10 @@ describe('APIClient (browser)', function(){
 			failure: (err) => {
 				logger.debug(`failure: ${JSON.stringify(err, null, 2)}`);
 				assert(err instanceof Error, 'should have thrown an error');
-				assert(err.status === registry.failureTest.headers['x-failure'], 'should have failed with correct status');
+				assert(err.status === registry.failureTestXHR.headers['x-failure'], 'should have failed with correct status');
 				assert(err.statusText === 'Not Implemented', 'should have correct status text');
 				assert(err.response === 'Simulated server error', 'should have correct error message');
-				done();
+				setTimeout(done, 1000);
 			}
 		});
 	});

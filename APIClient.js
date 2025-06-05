@@ -97,19 +97,32 @@ function APIClientFactory(registry){
 				const response = await fetch(interpolate(entry.url, config), {
 					method: entry.fetchMethod,
 					headers: Object.entries(entry.headers || {}).reduce((acc, [k, v]) => {
-						acc[k] = v;
+						acc[k] = interpolate(v, config);
 						return acc;
 					}, {}),
 					body: processPayload(entry, config)
 				});
-				config.success(response);
+
+				const contentType = response.headers.get("content-type") || "";
+				const responseContent = contentType.includes("application/json") ? await response.json() : await response.text();
+
+				if(response.ok){
+					config.success(responseContent);
+				}else{
+					logger.error(`Error: ${response.status} ${response.statusText}`);
+					const error = new Error("Request failed with status ${response.status}");
+					error.status = response.status;
+					error.statusText = response.statusText;
+					error.response = responseContent;
+					config.failure(error);
+				}
 			}catch(e){
 				logger.error(e);
 				config.failure(e);
 			}
 		},
-		custom: function(entry, config){
-			logger.debug('custom call');
+		xhr: function(entry, config){
+			logger.debug('custom XHR call');
 			const timeout = config.timeout || entry.timeout || 0;
 			const req = new XMLHttpRequest();
 			req.open(entry.customMethod, interpolate(entry.url, config), timeout > 0);
@@ -131,6 +144,23 @@ function APIClientFactory(registry){
 			}
 			const payload = processPayload(entry, config);
 			req.send(payload);
+		},
+		customFetch: function(entry, config){
+			logger.debug('custom fetch call');
+			try{
+				const response = fetch(interpolate(entry.url, config), {
+					method: entry.fetchMethod,
+					headers: Object.entries(entry.headers || {}).reduce((acc, [k, v]) => {
+						acc[k] = interpolate(v, config);
+						return acc;
+					}, {}),
+					body: processPayload(entry, config)
+				});
+				config.success(response);
+			}catch(e){
+				logger.error(e);
+				config.failure(e);
+			}
 		}
 	};
 

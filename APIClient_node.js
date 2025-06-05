@@ -52,6 +52,7 @@ function APIClientFactory(registry){
 					.on('end', () => {
 						logger.debug(`Response: ${response}`);
 						if(res.statusCode >= 400){
+							logger.error(`Error: ${res.statusCode} ${res.statusMessage}`);
 							const error = new Error(`HTTP Error: ${res.statusCode}`);
 							error.status = res.statusCode;
 							error.statusText = res.statusMessage;
@@ -102,25 +103,39 @@ function APIClientFactory(registry){
 		fetch: async function(entry, config){
 			logger.debug('fetch call');
 			const url = `${entry.protocol}//${entry.host}:${entry.port || '80'}${entry.path}`;
-			logger.debug(url);
+			logger.debug(`URL: ${url}`);
 			try{
 				const response = await fetch(interpolate(url, config), {
 					method: entry.fetchMethod,
 					headers: Object.entries(entry.headers || {}).reduce((acc, [k, v]) => {
-						acc[k] = v;
+						acc[k] = interpolate(v, config);
 						return acc;
 					}, {}),
 					body: processPayload(entry, config)
 				});
-				config.success(response);
+
+				const contentType = response.headers.get("content-type") || "";
+				const responseContent = contentType.includes("application/json") ? await response.json() : await response.text();
+
+				if(response.ok){
+					logger.debug(`Response: ${response.status} ${response.statusText}`);
+					config.success(responseContent);
+				}else{
+					logger.error(`Error: ${response.status} ${response.statusText}`);
+					const error = new Error(`HTTP Error: ${response.status}`);
+					error.status = response.status;
+					error.statusText = response.statusText;
+					error.response = responseContent;
+					config.failure(error);
+				}
 			}catch(e){
 				logger.error(e);
 				logger.error(url);
 				config.failure(e);
 			}
 		},
-		custom: function(entry, config){
-			logger.debug('custom call');
+		xhr: function(entry, config){
+			logger.debug('custom XHR call');
 			const options = {
 				...entry,
 				...config,
@@ -142,6 +157,25 @@ function APIClientFactory(registry){
 				req.write(payload);
 			}
 			req.end();
+		},
+		customFetch: async function(entry, config){
+			logger.debug('custom fetch call');
+			const url = `${entry.protocol}//${entry.host}:${entry.port || '80'}${entry.path}`;
+			logger.debug(`URL: ${url}`);
+			try{
+				const response = await fetch(interpolate(url, config), {
+					method: entry.fetchMethod,
+					headers: Object.entries(entry.headers || {}).reduce((acc, [k, v]) => {
+						acc[k] = interpolate(v, config);
+						return acc;
+					}, {}),
+					body: processPayload(entry, config)
+				});
+				config.success(response);
+			}catch(e){
+				logger.error(e);
+				config.failure(e);
+			}
 		}
 	};
 

@@ -1,4 +1,4 @@
-const interpolate = require('./interpolator');
+const interpolate = require('./interpolator.js');
 let Logger;
 if(typeof window === 'undefined'){
 	Logger = require('log-ng');

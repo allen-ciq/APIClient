@@ -104,39 +104,35 @@ describe('APIClient (node)', function(){
 		}
 	});
 	it('should use Fetch API', async function(){
-		const path = 'category';
-		const payload = {
-			test: true
-		};
+		const slot = 100;
+		const uuid = 'QWxsZW4gd2FzIGhlcmUK';
 		try{
-			const response = await client.fetchTest({
-				type: path,
-				payload
+			const result = await client.fetchTest({
+				slot,
+				uuid,
 			});
-			const result = await response.json();
 			logger.debug(JSON.stringify(result, null, 2));
 			assert.equal(result.method, 'POST');
-			assert.equal(result.path, `/${path}/resource`);
-			expect(result.body).deep.equal(payload);
-			assert.equal(response.headers.get('Set-Cookie').split(/;/)[0], 'sid=VXNlIFdlYnBhZCBmb3IgYWxsIHlvdXIgdGV4dCBtYW5pcHVsYXRpb24gbmVlZHMK');
+			assert.equal(result.path, '/metrics');
+			expect(result.body).deep.equal({slot: `${slot}`, uuid: `${uuid}`});
 		}catch(e){
-			if (e instanceof chai.AssertionError) {
+			if(e instanceof chai.AssertionError){
 				throw e;
 			}
 			logger.error(e);
 			assert(false, e);
 		}
 	});
-	it('should use custom', function(done){
+	it('should use custom XHR', function(done){
 		const slot = 100;
 		const uuid = 'QWxsZW4gd2FzIGhlcmUK';
-		client.customTest({
+		client.customXHRTest({
 			slot,
 			uuid,
 			success: (response) => {
 				const result = JSON.parse(response);
 				logger.debug(JSON.stringify(result, null, 2));
-				assert.equal(result.method, 'PATCH');
+				assert.equal(result.method, registry.customXHRTest.customMethod);
 				assert.equal(result.path, '/metrics');
 				expect(result.body).deep.equal({slot: `${slot}`, uuid: `${uuid}`});
 				done();
@@ -145,6 +141,30 @@ describe('APIClient (node)', function(){
 				assert(false, e);
 			}
 		});
+	});
+	it('should use custom Fetch', async function(){
+		const path = 'category';
+		const payload = {
+			test: true
+		};
+		try{
+			const response = await client.customFetchTest({
+				type: path,
+				payload
+			});
+			const result = await response.json();
+			logger.debug(JSON.stringify(result, null, 2));
+			assert.equal(result.method, 'POST');
+			assert.equal(result.path, `/${path}/resource`);
+			assert.equal(response.status, 200);
+			expect(result.body).deep.equal(payload);
+		}catch(e){
+			if (e instanceof chai.AssertionError) {
+				throw e;
+			}
+			logger.error(e);
+			assert(false, e);
+		}
 	});
 	it('should support rate limiting', async function(){
 		let shouldThrottle = false;
@@ -182,15 +202,27 @@ describe('APIClient (node)', function(){
 			assert(shouldTimeout, 'should not have timed out');
 		}
 	});
-	it('should handle server failure', function(done){
-		client.failureTest({
+	it('should handle server failure (Fetch)', async function(){
+		try{
+			const response = await client.failureTestFetch({});
+			logger.error(`response: ${response.status}`);
+			assert(false, 'should not have succeeded');
+		}catch(err){
+			logger.debug(`failure: ${JSON.stringify(err, null, 2)}`);
+			assert(err.status === registry.failureTestFetch.headers['x-failure'], 'should have failed with correct status');
+			assert(err.statusText === 'Internal Server Error', 'should have correct status text');
+			assert(err.response === 'Simulated server error', 'should have correct error message');
+		}
+	});
+	it('should handle server failure (XHR)', function(done){
+		client.failureTestXHR({
 			success: (res) => {
 				logger.error(`response: ${res.status}`);
 				assert(false, 'should not have succeeded');
 			},
 			failure: (err) => {
 				logger.debug(`failure: ${JSON.stringify(err, null, 2)}`);
-				assert(err.status === registry.failureTest.headers['x-failure'], 'should have failed with correct status');
+				assert(err.status === registry.failureTestXHR.headers['x-failure'], 'should have failed with correct status');
 				assert(err.statusText === 'Not Implemented', 'should have correct status text');
 				assert(err.response === 'Simulated server error', 'should have correct error message');
 				done();

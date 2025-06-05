@@ -30,19 +30,9 @@ export const registry = Object.freeze({
 		}
 	},
 	fetchTest: {
-		url: 'http://localhost:3000/{{type}}/resource',
-		method: 'fetch',
-		fetchMethod: 'POST',
-		headers: {
-			'content-type': 'application/json',
-			'x-cookie': true
-		},
-		body: '{{payload}}'
-	},
-	customTest: {
 		url: 'http://localhost:3000/metrics',
-		method: 'custom',
-		customMethod: 'post',
+		method: 'fetch',
+		fetchMethod: 'post',
 		headers: {
 			accept: 'application/json',
 			'Content-Type': 'application/x-www-form-urlencoded'
@@ -52,10 +42,32 @@ export const registry = Object.freeze({
 			uuid: '{{uuid}}'
 		}
 	},
+	customXHRTest: {
+		url: 'http://localhost:3000/metrics',
+		method: 'xhr',
+		customMethod: 'PATCH',
+		headers: {
+			accept: 'application/json',
+			'Content-Type': 'application/x-www-form-urlencoded'
+		},
+		body: {
+			slot: '{{slot}}',
+			uuid: '{{uuid}}'
+		}
+	},
+	customFetchTest: {
+		url: 'http://localhost:3000/{{type}}/resource',
+		method: 'customFetch',
+		fetchMethod: 'POST',
+		headers: {
+			'content-type': 'application/json',
+			'x-cookie': true
+		},
+		body: '{{payload}}'
+	},
 	timeoutTest: {
 		url: 'http://localhost:3000/timeout',
-		method: 'custom',
-		customMethod: 'post',
+		method: 'post',
 		headers: {
 			'x-delay': '{{delay}}'
 		},
@@ -68,7 +80,15 @@ export const registry = Object.freeze({
 		rate: 1,
 		period: 'minute'
 	},
-	failureTest: {
+	failureTestFetch: {
+		url: 'http://localhost:3000/failure',
+		method: 'fetch',
+		fetchMethod: 'get',
+		headers: {
+			'x-failure': 500
+		}
+	},
+	failureTestXHR: {
 		url: 'http://localhost:3000/failure',
 		method: 'get',
 		headers: {
