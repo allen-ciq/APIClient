@@ -29,6 +29,6 @@
     "winston": "^3.11.0"
   },
   "dependencies": {
-    "log-ng": "github:stupid-genius/log-ng"
+    "log-ng": "github:allen-ciq/log-ng"
   }
 }
