@@ -1,5 +1,3 @@
-const http = require('http');
-const https = require('https');
 const Logger = require('log-ng');
 const path = require('path');
 const Governor = require('./Governor.js');
@@ -26,11 +24,11 @@ function APIClientFactory(registry){
 		let client;
 		switch(protocol){
 			case 'http:':
-				client = http;
+				client = require('http');
 				break;
 			case 'https:':
 			default:
-				client = https;
+				client = require('https');
 		}
 		return client;
 	}

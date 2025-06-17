@@ -2,11 +2,85 @@ const chai = require('chai');
 const { assert, expect } = chai;
 const Logger = require('log-ng');
 const path = require('path');
+const interpolate = require('./interpolator.js');
 const registry= require('./registry_node.js');
 
-Logger({logLevel: 'error', logFile: 'APIClient.log'});
+Logger({logLevel: 'debug', logFile: 'APIClient.log'});
 const logger = new Logger(path.basename(__filename));
 const client = require('./APIClient_node.js')(registry);
+
+describe('Interpolator', function(){
+	it('should interpolate simple strings', function(){
+		const template = 'Hello, {{name}}!';
+		const model = { name: 'Alice' };
+		const result = interpolate(template, model);
+		expect(result).to.equal('Hello, Alice!');
+	});
+
+	it('should replace full value with array when template is "{{key}}"', function(){
+		const template = '{{items}}';
+		const model = { items: [1, 2, 3] };
+		const result = interpolate(template, model);
+		expect(result).to.deep.equal([1, 2, 3]);
+	});
+
+	it('should replace full value with object when template is "{{key}}"', function(){
+		const template = '{{settings}}';
+		const model = { settings: { dark: true } };
+		const result = interpolate(template, model);
+		expect(result).to.deep.equal({ dark: true });
+	});
+
+	it('should interpolate values inside a nested object', function(){
+		const template = {
+			user: {
+				name: '{{name}}',
+				age: '{{age}}'
+			}
+		};
+		const model = { name: 'Bob', age: 30 };
+		const result = interpolate(template, model);
+		expect(result).to.deep.equal({
+			user: {
+				name: 'Bob',
+				age: 30
+			}
+		});
+	});
+
+	it('should interpolate values inside an array of strings', function(){
+		const template = ['{{a}}', '{{b}}'];
+		const model = { a: 'x', b: 'y' };
+		const result = interpolate(template, model);
+		expect(result).to.deep.equal(['x', 'y']);
+	});
+
+	it('should preserve raw arrays in object fields', function(){
+		const template = {
+			list: '{{arr}}'
+		};
+		const model = {
+			arr: [10, 20]
+		};
+		const result = interpolate(template, model);
+		expect(result).to.deep.equal({
+			list: [10, 20]
+		});
+	});
+
+	it('should return empty string for missing keys in string interpolation', function(){
+		const template = 'Hello, {{missing}}!';
+		const model = {};
+		const result = interpolate(template, model);
+		expect(result).to.equal('Hello, !');
+	});
+
+	it('should handle non-string template values without change', function(){
+		expect(interpolate(42, {})).to.equal(42);
+		expect(interpolate(true, {})).to.equal(true);
+		expect(interpolate(null, {})).to.equal(null);
+	});
+});
 
 describe('APIClient (node)', function(){
 	it('should build from registry', function(){
