@@ -16,9 +16,6 @@ function APIClientFactory(registry){
 	if(!new.target){
 		return new APIClientFactory(...arguments);
 	}
-	if(APIClientFactory.instance !== undefined){
-		return APIClientFactory.instance;
-	}
 
 	function getClient(protocol){
 		let client;
@@ -111,6 +108,7 @@ function APIClientFactory(registry){
 					}, {}),
 					body: processPayload(entry, config)
 				});
+				logger.debug(`Response headers: ${JSON.stringify(response.headers, null, 2)}`);
 
 				const contentType = response.headers.get("content-type") || "";
 				const responseContent = contentType.includes("application/json") ? await response.json() : await response.text();
@@ -207,10 +205,6 @@ function APIClientFactory(registry){
 				});
 			}
 		});
-	});
-
-	Object.defineProperty(APIClientFactory, "instance", {
-		value: this
 	});
 };
 

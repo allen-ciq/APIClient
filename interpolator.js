@@ -7,7 +7,7 @@ const logger = { debug: debug ? console.log.bind(console) : ()=>{} };
 
 function interpolator(template = "", model = {}){
 	logger.debug(`Interpolating template: ${template} with model: ${JSON.stringify(model)}`);
-	if(template instanceof Object){
+	if(template instanceof Object && !(template instanceof String)){
 		const interpolated = Array.isArray(template) ? [] : {};
 		for(const o in template){
 			const val = interpolator(template[o], model);
