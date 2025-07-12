@@ -276,6 +276,18 @@ describe('APIClient (node)', function(){
 			assert(shouldTimeout, 'should not have timed out');
 		}
 	});
+	it('should handle request failure', function(done){
+		client.failureTest({
+			success: () => {
+				assert(false, 'should not have succeeded');
+			},
+			failure: (err) => {
+				logger.debug(`failure: ${JSON.stringify(err, null, 2)}`);
+				assert(err.code === 'ENOTFOUND', 'should have ENOTFOUND error code');
+				done();
+			}
+		});
+	});
 	it('should handle server failure (Fetch)', async function(){
 		try{
 			const response = await client.failureTestFetch({});

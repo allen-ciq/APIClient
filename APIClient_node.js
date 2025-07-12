@@ -41,7 +41,7 @@ function APIClientFactory(registry){
 			};
 			logger.debug(JSON.stringify(options, null, 2));
 			const client = getClient(options.protocol);
-			return client.request(options, (res) => {
+			const req = client.request(options, (res) => {
 				let response = '';
 				res.on('data', (chunk) => {response += chunk})
 					.on('end', () => {
@@ -60,6 +60,19 @@ function APIClientFactory(registry){
 					.on('error', config.failure)
 					.on('timeout', config.failure);
 			});
+			req.on('error', (err) => {
+				logger.error(err);
+				req.destroy(err);
+				config.failure(err);
+			});
+			req.on('timeout', () => {
+				const error = new Error('Request timed out');
+				error.status = 408; // Request Timeout
+				logger.error(error);
+				req.destroy(error);
+				config.failure(error);
+			});
+			return req;
 		}catch(e){
 			logger.error(e);
 			config.failure(e);
@@ -147,6 +160,18 @@ function APIClientFactory(registry){
 					.on('end', () => {config.success(response)})
 					.on('error', config.failure)
 					.on('timeout', config.failure);
+			});
+			req.on('error', (err) => {
+				logger.error(err);
+				req.destroy(err);
+				config.failure(err);
+			});
+			req.on('timeout', () => {
+				const error = new Error('Request timed out');
+				error.status = 408; // Request Timeout
+				logger.error(error);
+				req.destroy(error);
+				config.failure(error);
 			});
 			const payload = processPayload(entry, config);
 			if(payload !== undefined){

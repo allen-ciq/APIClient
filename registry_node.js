@@ -106,6 +106,13 @@ module.exports = Object.freeze({
 		rate: 1,
 		period: 'minute'
 	},
+	failureTest: {
+		method: 'get',
+		protocol: 'http:',
+		host: 'fail.invalid',
+		port: 80,
+		path: '/'
+	},
 	failureTestFetch: {
 		method: 'fetch',
 		fetchMethod: 'get',
