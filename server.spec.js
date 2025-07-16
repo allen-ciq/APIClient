@@ -75,6 +75,16 @@ describe('Interpolator', function(){
 		expect(result).to.equal('Hello, !');
 	});
 
+	it('should remove undefined keys in object interpolation', function(){
+		const template = {
+			name: '{{name}}',
+			age: '{{age}}'
+		};
+		const model = { name: 'Charlie' };
+		const result = interpolate(template, model);
+		expect(result).to.deep.equal({ name: 'Charlie' });
+	});
+
 	it('should handle non-string template values without change', function(){
 		expect(interpolate(42, {})).to.equal(42);
 		expect(interpolate(true, {})).to.equal(true);
