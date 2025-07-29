@@ -1,3 +1,4 @@
+const { Buffer } = require('node:buffer');
 const Logger = require('log-ng');
 const path = require('path');
 const Governor = require('./Governor.js');
@@ -30,7 +31,7 @@ function APIClientFactory(registry){
 		return client;
 	}
 
-	function httpHandler(entry, config){
+	function httpHandler(entry, config, payload){
 		try{
 			const options = {
 				...entry,
@@ -39,6 +40,11 @@ function APIClientFactory(registry){
 				path: interpolate(entry.path, config),
 				headers: interpolate(entry.headers, config)
 			};
+
+			if(payload !== undefined && !options.headers['Content-Length'] && options.headers['Transfer-Encoding'] !== 'chunked'){
+				options.headers['Content-Length'] = Buffer.byteLength(payload).toString();
+			}
+
 			logger.debug(JSON.stringify(options, null, 2));
 			const client = getClient(options.protocol);
 			const req = client.request(options, (res) => {
@@ -87,8 +93,8 @@ function APIClientFactory(registry){
 		},
 		post: function(entry, config){
 			logger.debug('post call');
-			const req = httpHandler(entry, config);
 			const payload = processPayload(entry, config);
+			const req = httpHandler(entry, config, payload);
 			if(payload !== undefined){
 				req.write(payload);
 			}
@@ -96,8 +102,8 @@ function APIClientFactory(registry){
 		},
 		put: function(entry, config){
 			logger.debug('put call');
-			const req = httpHandler(entry, config);
 			const payload = processPayload(entry, config);
+			const req = httpHandler(entry, config, payload);
 			if(payload !== undefined){
 				req.write(payload);
 			}
@@ -153,6 +159,10 @@ function APIClientFactory(registry){
 				path: interpolate(entry.path, config),
 				headers: interpolate(entry.headers, config)
 			};
+			const payload = processPayload(entry, config);
+			if(payload !== undefined){
+				options.headers['Content-Length'] = Buffer.byteLength(payload).toString();
+			}
 			const client = getClient(entry.protocol);
 			const req = client.request(options, (res) => {
 				let response = '';
@@ -173,7 +183,6 @@ function APIClientFactory(registry){
 				req.destroy(error);
 				config.failure(error);
 			});
-			const payload = processPayload(entry, config);
 			if(payload !== undefined){
 				req.write(payload);
 			}
