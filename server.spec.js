@@ -3,6 +3,7 @@ const { assert, expect } = chai;
 const Logger = require('log-ng');
 const path = require('path');
 const interpolate = require('./interpolator.js');
+const processPayload = require('./processPayload.js');
 const registry= require('./registry_node.js');
 
 Logger({logLevel: 'debug', logFile: 'APIClient.log'});
@@ -89,6 +90,69 @@ describe('Interpolator', function(){
 		expect(interpolate(42, {})).to.equal(42);
 		expect(interpolate(true, {})).to.equal(true);
 		expect(interpolate(null, {})).to.equal(null);
+	});
+});
+
+describe('processPayload', function(){
+	it('should handle missing Content-Type', function(){
+		const entry = {
+			body: { key: 'value' }
+		};
+		const config = {};
+		const result = processPayload(entry, config);
+		expect(result).to.equal(JSON.stringify({ key: 'value' }));
+	});
+	it('should handle undefined body', function(){
+		const entry = {
+			headers: { 'Content-Type': 'application/json' }
+		};
+		const config = {};
+		const result = processPayload(entry, config);
+		expect(result).to.equal(undefined);
+	});
+	it('should handle string body', function(){
+		const entry = {
+			body: 'raw string'
+		};
+		const config = {};
+		const result = processPayload(entry, config);
+		expect(result).to.equal('raw string');
+	});
+	it('should handle JSON body', function(){
+		const entry = {
+			body: { key: 'value' },
+			headers: { 'Content-Type': 'application/json' }
+		};
+		const config = {};
+		const result = processPayload(entry, config);
+		expect(result).to.equal(JSON.stringify({ key: 'value' }));
+	});
+	it('should handle URL-encoded body', function(){
+		const entry = {
+			body: { key: 'value', foo: 'bar baz' },
+			headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+		};
+		const config = {};
+		const result = processPayload(entry, config);
+		expect(result).to.equal('key=value&foo=bar%20baz');
+	});
+	it('should handle text/plain body with array', function(){
+		const entry = {
+			body: ['line1', 'line2'],
+			headers: { 'Content-Type': 'text/plain' }
+		};
+		const config = {};
+		const result = processPayload(entry, config);
+		expect(result).to.equal('line1\nline2');
+	});
+	it('should handle text/plain body with object', function(){
+		const entry = {
+			body: { key: 'value' },
+			headers: { 'Content-Type': 'text/plain' }
+		};
+		const config = {};
+		const result = processPayload(entry, config);
+		expect(result).to.equal(JSON.stringify({ key: 'value' }));
 	});
 });
 
@@ -285,6 +349,8 @@ describe('APIClient (node)', function(){
 			}
 			assert(shouldTimeout, 'should not have timed out');
 		}
+
+		await new Promise((resolve) => setTimeout(resolve, 1001)); // wait for server to finish
 	});
 	it('should handle request failure', function(done){
 		client.failureTest({

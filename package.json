@@ -4,7 +4,7 @@
   "description": "A client object that is bound to a set of endpoints",
   "main": "index.js",
   "browser": {
-	  "index.js": "APIClient.js"
+    "index.js": "APIClient.js"
   },
   "scripts": {
     "karma": "node testServer.js & SERVER_PID=$! && karma start; kill $SERVER_PID",
